@@ -24,15 +24,17 @@ int readBank(int column)
   Serial.print(voltage);
   Serial.print(" ");
   // these need to be selected based on the resistors in the analog button encoders
-  if(voltage < 209) return 0;
-  else if(voltage < 465) return 1;
-  else if(voltage < 577) return 2;
-  else if(voltage < 670) return 3;
-  else if(voltage < 727) return 4;
-  else if(voltage < 766) return 5;
-  else if(voltage < 794) return	6;
+
+	if(voltage < 203) return 0;
+	else if(voltage < 450) return 1;
+	else if(voltage < 560) return 2;
+	else if(voltage < 649) return 3;
+	else if(voltage < 704) return 4;
+	else if(voltage < 742) return 5;
+	else if(voltage < 769) return 6;
   return 7;
 }
+
 
 void setup()
 {
@@ -57,20 +59,18 @@ void loop()
     Serial.print(" -> ");
   int code = readBank(column+8);
   Serial.println(code);
-  if(code & 1){
-      if(mp3.isPlaying())
-        mp3.stopTrack();
-    mp3.playTrack(0);
+  if(code & 1)
     ledOff(column * 3 + 14);
-    delay(500);
-  }
     else  ledOn(column * 3 + 14);
+    
   if(code & 2)
     ledOff(column * 3 + 15);
     else ledOn(column * 3 + 15);
+    
   if(code & 4)
     ledOff(column * 3 + 16);
     else ledOn(column * 3 + 16);
   }
+  delay(250);
   Serial.println();
 }
