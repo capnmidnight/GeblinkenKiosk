@@ -1,0 +1,4 @@
+The SparkFun MP3 Player Shield is designed to work with Arduino UNO, Pro, or Duelimanove. If you're using the Arduino Mega 2560, the Mega moves the Serial Input Bus to pins 50-53, so you must make the following connections, rather than using the header pins:
+
+From MP3 Shield SPI: 9 (SS), 11 (MOSI), 12 (MISO), 13 (SCK).
+To Mega SPI: 53 (SS). 51 (MOSI), 50 (MISO), 52 (SCK),
