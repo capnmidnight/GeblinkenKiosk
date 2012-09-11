@@ -36,7 +36,7 @@ struct GameState
 };
 
 // function pointer type definitions for the FSM
-typedef void(*enter_function)(GameState&);
+typedef char*(*enter_function)(GameState&);
 typedef States(*body_function)(int, GameState&);
 
 // Digital I/O pins for each of the status lights

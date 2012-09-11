@@ -4,7 +4,7 @@
 
 int SELECT_nextReminder;
 int SELECT_reminderCount;
-void enter_SELECT_TRACK(GameState& game)
+char* enter_SELECT_TRACK(GameState& game)
 {
   static int i;
   SELECT_nextReminder = 0;
@@ -15,22 +15,15 @@ void enter_SELECT_TRACK(GameState& game)
       lightButton(0, i);
   }
   setScoreLights(game.score);
-#ifndef MP3_DISABLE
-  game.mp3.playMP3("seltrack.mp3");
-#endif
+  return "seltrack.mp3";
 }
 
 States body_SELECT_TRACK(int dt, GameState& game)
 {
   static int i;
-#ifndef MP3_DISABLE
   if(game.mp3.isPlaying())
-  {
     return SELECT_TRACK;
-  }
-  else 
-#endif
-  if(dt > SELECT_REMINDER_DELTA * 6)
+  else if(dt > SELECT_REMINDER_DELTA * 6)
     return ATTRACT;
   else if(wasAnyButtonPressed())
   {
@@ -48,7 +41,7 @@ States body_SELECT_TRACK(int dt, GameState& game)
   return SELECT_TRACK;
 }
 
-void enter_SELECT_REGION(GameState& game)
+char* enter_SELECT_REGION(GameState& game)
 {
   static int i;
   SELECT_nextReminder = 0;
@@ -59,20 +52,15 @@ void enter_SELECT_REGION(GameState& game)
     lightButton(1, i);
   }
   setScoreLights(game.score);
-#ifndef MP3_DISABLE
-  game.mp3.playMP3("selreg.mp3");
-#endif
+  return "selreg.mp3";
 }
 
 States body_SELECT_REGION(int dt, GameState& game)
 {
   static int i;
-#ifndef MP3_DISABLE
   if(game.mp3.isPlaying())
     return SELECT_REGION;
-  else
-#endif
-  if(dt > SELECT_REMINDER_DELTA * 6)
+  else if(dt > SELECT_REMINDER_DELTA * 6)
     return ATTRACT;
   else if(wasAnyButtonPressed())
   {

@@ -4,7 +4,7 @@
 #include <arduino.h>
 #include "kiosk.h"
 
-void enter_GAME_OVER(GameState&);
+char* enter_GAME_OVER(GameState&);
 States body_GAME_OVER(int, GameState&);
 
 #endif

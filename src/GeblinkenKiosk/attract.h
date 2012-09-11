@@ -6,7 +6,7 @@
 #include "kiosk.h"
 
 const int ATTRACT_MILLIS_PER_FRAME = 100;
-void enter_ATTRACT(GameState&); 
+char* enter_ATTRACT(GameState&); 
 States body_ATTRACT(int, GameState&); 
 
 #endif

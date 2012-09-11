@@ -10,8 +10,6 @@
 #include "answer.h"
 #include "game_over.h"
 
-//#define MP3_DISABLE
-
 States currentState, nextState;
 GameState game;
 int stateStarted, currentFrame;
@@ -25,19 +23,18 @@ void setup()
   static int i;
   currentState = NONE;
   nextState = ATTRACT;
-#ifndef MP3_DISABLE  
   game.mp3.begin();
-#endif
   for(i = MIN_OUTPUT_PIN; i < MAX_OUTPUT_PIN; ++i)
   {
     pinMode(i, OUTPUT);
   }	
 }
 
-void enterState()
+char* enterState()
 {
   if(enter[currentState] != NULL)
-    (*enter[currentState])(game);
+    return (*enter[currentState])(game);
+  return NULL;
 }
 States updateState(int dt)
 {
@@ -49,17 +46,15 @@ void loop()
 {
   if(nextState != currentState)
   {
-#ifndef MP3_DISABLE
     if(game.mp3.isPlaying())
     {
       game.mp3.stopTrack();
     }
-#endif
     allLightsOff();
     delay(500); // give the user some time to let go of the button
     currentState = nextState;
     stateStarted = millis();
-    enterState();
+    game.mp3.playMP3(enterState());
   }
   readInput();
   currentFrame = millis();  

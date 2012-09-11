@@ -4,7 +4,7 @@
 #include <arduino.h>
 #include "kiosk.h"
 
-void enter_INTRO(GameState&);
+char* enter_INTRO(GameState&);
 States body_INTRO(int, GameState&);
 
 #endif
