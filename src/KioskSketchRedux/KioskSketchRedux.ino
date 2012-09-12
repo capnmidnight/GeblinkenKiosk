@@ -5,6 +5,22 @@
 #include <SFEMP3Shield.h>
 #include "KioskSketchRedux.h"
 
+char* trackFiles[] = {
+  "arnoldm.mp3",
+  "begonial.mp3",
+  "celestes.mp3",
+  "glorias.mp3",
+  "lorraine.mp3",
+  "normab.mp3",
+  "johnk.mp3",
+  "sophyk.mp3",
+  "tracym.mp3",
+  "barryp.mp3",
+  "dianes.mp3",
+  "claraw.mp3"
+};
+
+
 static SFEMP3Shield player;
 static struct Game game = { 
   NONE,
@@ -30,14 +46,23 @@ static struct Game game = {
   }
 };
 
-void ledOff(int pin){
-  pinMode(pin, INPUT);
-  digitalWrite(pin, LOW);
+void ledOff(int pin)
+{
+  pinMode(LED_OUTPUT_MAP[pin], INPUT);
+  digitalWrite(LED_OUTPUT_MAP[pin], LOW);
 }
 
-void ledOn(int pin){
-  pinMode(pin, OUTPUT);
-  digitalWrite(pin, (pin < S1) ? LOW : HIGH);
+
+void ledOn(int pin)
+{
+  pinMode(LED_OUTPUT_MAP[pin], OUTPUT);
+
+  if((MIN_SCORE_PIN <= pin && pin <= MAX_SCORE_PIN)
+    || pin == GREEN_STROBE_PIN
+    || pin == RED_STROBE_PIN)  // the score LEDs are switched by transistors
+    digitalWrite(LED_OUTPUT_MAP[pin], HIGH);
+  else // the button LEDs are driven to ground through the MCU
+    digitalWrite(LED_OUTPUT_MAP[pin], LOW);
 }
 
 void rangeLightsOff(int first, int last){
@@ -93,18 +118,20 @@ void allScoreLightsOn(){
 }
 
 void setScoreLights(){
-  rangeLightsOn(S1, S1 + game.score);
+  rangeLightsOn(MIN_SCORE_PIN, MIN_SCORE_PIN + game.score - 1);
 }
 
+
+
 int readColumn(int column){
-  static int readCount[MAX_INPUT_PIN + 1 - MIN_INPUT_PIN] = {0, 0, 0, 0, 0, 0};
-  int voltage = analogRead(column + MIN_INPUT_PIN);
+  static int readCount[NUM_INPUTS] = {0, 0, 0, 0, 0, 0, 0, 0};
+  int voltage = analogRead(column);
   //software debouncing
   if(voltage == 0)
-    readCount[column] = 0;
+    readCount[column - MIN_INPUT_PIN] = 0;
   else
-    ++readCount[column];
-  if(readCount[column] < 5 || voltage < 203) return 0;
+    ++readCount[column - MIN_INPUT_PIN];
+  if(readCount[column - MIN_INPUT_PIN] < 5 || voltage < 203) return 0;
   else if(voltage < 450) return 1;
   else if(voltage < 560) return 2;
   else if(voltage < 649) return 3;
@@ -114,30 +141,66 @@ int readColumn(int column){
   return 7;
 }
 
-void readInput(){
-  game.buttonWasPressed = 0;
-  for(int column = 0; column <= MAX_INPUT_PIN - MIN_INPUT_PIN; ++column)
-  {
-    int state = readColumn(column);
-    //Serial.print("column: ");
-    //Serial.println(column);
-    //Serial.print("state: ");
-    //Serial.println(state);
-    game.buttonWasPressed |= state;
-    //Serial.print("button was pressed: ");
-    //Serial.println(game.buttonWasPressed);
-
-    int bank = column / 3;
-    //Serial.print("bank: ");
-    //Serial.println(bank);
-    int columnStart = (column % 3) * 3;
-    //Serial.print("columnStart: ");
-    //Serial.println(columnStart);
-    for(int button = 0; button < 3; ++button, state >>= 1)
-    {
-      game.buttonState[bank][columnStart + button] = state & 1;
-    }
-  }
+boolean scanInput(boolean buffer[2][12])
+{
+  boolean buttonWasPressed = 0;
+  int state;
+  
+  state = readColumn(BANK1_COL1);
+  buffer[0][0] = state & 1;
+  buffer[0][1] = (state & 2) >> 1;
+  buffer[0][2] = (state & 4) >> 2;
+  // buffer[0][3] filled on the BANK1_ROW4
+  
+  state = readColumn(BANK1_COL2);
+  buffer[0][4] = state & 1;
+  buffer[0][5] = (state & 2) >> 1;
+  buffer[0][6] = (state & 4) >> 2;
+  // buffer[0][7] filled on the BANK1_ROW4
+  
+  state = readColumn(BANK1_COL3);
+  buffer[0][8] = state & 1;
+  buffer[0][9] = (state & 2) >> 1;
+  buffer[0][10] = (state & 4) >> 2;
+  // buffer[0][11] filled on the BANK1_ROW4
+  
+  // this just happens to be how it is wired
+  state = readColumn(BANK1_ROW4);
+  buffer[0][11] = state & 1;
+  buffer[0][7] = (state & 2) >> 1;
+  buffer[0][3] = (state & 4) >> 2;
+  
+  
+  state = readColumn(BANK2_COL1);
+  buffer[1][0] = state & 1;
+  buffer[1][1] = (state & 2) >> 1;
+  buffer[1][2] = (state & 4) >> 2;
+  // buffer[1][3] filled on the BANK2_ROW4
+  
+  state = readColumn(BANK2_COL2);
+  buffer[1][4] = state & 1;
+  buffer[1][5] = (state & 2) >> 1;
+  buffer[1][6] = (state & 4) >> 2;
+  // buffer[1][7] filled on the BANK2_ROW4
+  
+  state = readColumn(BANK2_COL3);
+  buffer[1][8] = state & 1;
+  buffer[1][9] = (state & 2) >> 1;
+  buffer[1][10] = (state & 4) >> 2;
+  // buffer[1][11] filled on the BANK2_ROW4
+  
+  // this just happens to be how it is wired
+  state = readColumn(BANK2_ROW4);
+  buffer[1][11] = state & 1;
+  buffer[1][7] = (state & 2) >> 1;
+  buffer[1][3] = (state & 4) >> 2;
+  
+  // just gonna reuse the state variable for no good reason other
+  // than "waste not, want not"
+  for(state = 0; state < 12; ++state)
+    if(buffer[0][state] | buffer[1][state])
+      return true;      
+  return false;
 }
 
 void setup(){
@@ -162,7 +225,8 @@ void loop(){
     case PLAY_TRACK:
     case GAME_OVER:
       allTrackRegionLightsOff();
-      rangeLightsOff(RIGHT_ANSWER, WRONG_ANSWER);
+      ledOff(GREEN_STROBE_PIN);
+      ledOff(RED_STROBE_PIN);
       break;
     case PLAY_REGION:
       allRegionLightsOff();
@@ -198,7 +262,7 @@ void loop(){
       break;
     case PLAY_TRACK:
       ledOn(MIN_TRACK_PIN + game.selectedTrack);
-      player.playTrack(game.selectedTrack);
+      player.playMP3(trackFiles[game.selectedTrack]);
       break;
     case SELECT_REGION:
       game.stateVar1 = SELECT_REMINDER_DELTA;
@@ -208,38 +272,37 @@ void loop(){
       break;
     case PLAY_REGION:
       ledOn(MIN_REGION_PIN + game.selectedRegion);
-      //player.playTrack(game.selectedRegion + NUM_TRACKS);
       break;
     case CORRECT_ANSWER:
       game.score++;
       setScoreLights();
-      ledOn(RIGHT_ANSWER);
+      ledOn(GREEN_STROBE_PIN);
       player.playMP3("right.mp3");
       break;
     case INCORRECT_ANSWER:
-      ledOn(WRONG_ANSWER);
+      ledOn(RED_STROBE_PIN);
       player.playMP3("wrong.mp3");
       break;
     case GAME_OVER:
       if( game.score == NUM_TRACKS )
       {
-        ledOn(RIGHT_ANSWER);
-        player.playMP3("win.mp3");
+        ledOn(GREEN_STROBE_PIN);
+        player.playMP3("winfull.mp3");
       } 
       else if(game.score > NUM_TRACKS - 4)
       {
-        ledOn(RIGHT_ANSWER);
-        player.playMP3("win.mp3");
+        ledOn(GREEN_STROBE_PIN);
+        player.playMP3("winpart.mp3");
       }
       else 
       {
-        ledOn(WRONG_ANSWER);
+        ledOn(RED_STROBE_PIN);
         player.playMP3("lose.mp3");
       }
       break;
     }
   }
-  readInput();
+  game.buttonWasPressed = scanInput(game.buttonState);
   unsigned long iterationDelta = millis() - game.stateStartTime;
   switch( game.currentState ){
   case ATTRACT:
